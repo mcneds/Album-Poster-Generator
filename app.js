@@ -31,13 +31,22 @@ function extractColors() {
 
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i], g = data[i + 1], b = data[i + 2];
+
+    // Filter out near-white/near-black values
+    if (r > 245 && g > 245 && b > 245) continue; // too white
+    if (r < 15 && g < 15 && b < 15) continue;    // too black
+
     const hex = rgbToHex(r, g, b);
     colorMap.set(hex, (colorMap.get(hex) || 0) + 1);
   }
 
-  // Sort by most frequent
   const sorted = [...colorMap.entries()].sort((a, b) => b[1] - a[1]);
   colorPalette = sorted.slice(0, 5).map(entry => entry[0]);
+
+  // Fallback in case palette is empty
+  if (colorPalette.length === 0) {
+    colorPalette = ['#ccc', '#888', '#444', '#000', '#fff'];
+  }
 }
 
 function rgbToHex(r, g, b) {
@@ -83,15 +92,21 @@ function render() {
     const size = 600;
     ctx.drawImage(coverImage, 60, 40, size, size);
 
-    //  Draw color palette
+    // ✅ Draw color palette swatches
     const swatchX = 60;
     const swatchY = 660;
     const swatchSize = 40;
     const spacing = 10;
 
     colorPalette.forEach((color, i) => {
+      const x = swatchX + i * (swatchSize + spacing);
       ctx.fillStyle = color;
-      ctx.fillRect(swatchX + i * (swatchSize + spacing), swatchY, swatchSize, swatchSize);
+      ctx.fillRect(x, swatchY, swatchSize, swatchSize);
+
+      // Add border for visibility
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, swatchY, swatchSize, swatchSize);
     });
 
     textStartY = 730;
