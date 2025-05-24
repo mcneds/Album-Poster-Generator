@@ -10,6 +10,7 @@ body {
   display: flex;
   flex-direction: column;
   width: 300px;
+  position: relative;
 }
 
 textarea, input, select {
@@ -23,25 +24,25 @@ canvas {
 }
 
 #spotify-search {
-  width: 100%;
-  margin-bottom: 0.5rem;
-  padding: 0.5rem;
+  position: relative;
+  z-index: 2;
 }
 
 #search-results {
   list-style: none;
-  margin: 0;
   padding: 0;
+  margin: 0;
   max-height: 200px;
   overflow-y: auto;
-  border: 1px solid #ccc;
-  background: white;
   position: absolute;
-  z-index: 999;
+  background: white;
+  border: 1px solid #ccc;
+  width: calc(100% - 24px); /* fits inside #controls */
+  z-index: 3;
 }
 
 #search-results li {
-  padding: 0.5rem;
+  padding: 5px 10px;
   cursor: pointer;
 }
 
