@@ -173,58 +173,47 @@ function render() {
   y += 30;
 
   // Dynamically determine the best layout
-const columnSpacing = 20;
-const trackAreaHeight = canvas.height - y - 30;
-const userFontSize = parseInt(document.getElementById("track-font-size").value, 10);
-const userCols = parseInt(document.getElementById("track-cols").value, 10);
+  const maxColumns = 3;
+  const columnSpacing = 20;
+  const trackAreaHeight = canvas.height - y - 30;
+  let bestFontSize = 10;
+  let bestCols = maxColumns;
+  let bestLinesPerCol = 1;
 
-let fontSize = 10;
-let numCols = 3;
-let linesPerCol = 1;
-
-if (userFontSize > 0 && userCols > 0) {
-  fontSize = userFontSize;
-  numCols = userCols;
-  linesPerCol = Math.floor(trackAreaHeight / (fontSize + 6));
-} else {
-  for (let cols = 1; cols <= 3; cols++) {
-    const availableWidth = canvas.width - padding * 2 - (cols - 1) * columnSpacing;
-    const colWidth = availableWidth / cols;
-
-    for (let size = 36; size >= 10; size--) {
+  for (let cols = 1; cols <= maxColumns; cols++) {
+    const colWidth = (canvas.width - padding * 2 - (cols - 1) * columnSpacing) / cols;
+    for (let size = 24; size >= 10; size--) {
       const lineHeight = size + 6;
-      const lines = Math.floor(trackAreaHeight / lineHeight);
-      if (lines * cols >= tracks.length) {
-        fontSize = size;
-        numCols = cols;
-        linesPerCol = lines;
+      const linesPerCol = Math.floor(trackAreaHeight / lineHeight);
+      if (linesPerCol * cols >= tracks.length) {
+        bestFontSize = size;
+        bestCols = cols;
+        bestLinesPerCol = linesPerCol;
         break;
       }
     }
-    if (fontSize > 10) break;
-  }
-}
-
-ctx.font = `${fontSize}px ${font}`;
-ctx.fillStyle = textColor;
-ctx.textAlign = "left";
-
-for (let i = 0; i < tracks.length; i++) {
-  const col = Math.floor(i / linesPerCol);
-  const row = i % linesPerCol;
-
-  const colWidth = (canvas.width - padding * 2 - (numCols - 1) * columnSpacing) / numCols;
-  const x = padding + col * (colWidth + columnSpacing);
-  const trackY = y + row * (fontSize + 6);
-
-  let trackLine = tracks[i].trim();
-  if (!showDurations && trackLine.includes(" - ")) {
-    trackLine = trackLine.split(" - ")[0];
+    if (bestFontSize !== 10) break;
   }
 
-  ctx.fillText(trackLine, x, trackY);
-}
+  ctx.font = `${bestFontSize}px ${font}`;
+  ctx.fillStyle = textColor;
+  ctx.textAlign = "left";
 
+  for (let i = 0; i < tracks.length; i++) {
+    const col = Math.floor(i / bestLinesPerCol);
+    const row = i % bestLinesPerCol;
+
+    const colWidth = (canvas.width - padding * 2 - (bestCols - 1) * columnSpacing) / bestCols;
+    const x = padding + col * (colWidth + columnSpacing);
+    const trackY = y + row * (bestFontSize + 6);
+
+    let trackLine = tracks[i].trim();
+    if (!showDurations && trackLine.includes(" - ")) {
+      trackLine = trackLine.split(" - ")[0];
+    }
+
+    ctx.fillText(trackLine, x, trackY);
+  }
 }
 
 
@@ -307,16 +296,10 @@ document.getElementById("spotify-search").addEventListener("input", async (e) =>
     });
 });
 
-const searchInput = document.getElementById("spotify-search");
-const searchResults = document.getElementById("search-results");
-
-searchInput.addEventListener("blur", () => {
-  // Only clear if click wasn't on a result
+document.getElementById("spotify-search").addEventListener("blur", () => {
   setTimeout(() => {
-    if (!searchResults.matches(':hover')) {
-      searchResults.innerHTML = "";
-    }
-  }, 150);
+    document.getElementById("search-results").innerHTML = "";
+  }, 200);
 });
 
 document.getElementById("bg-color-mode").addEventListener("change", () => {
@@ -333,8 +316,3 @@ document.getElementById("text-color-mode").addEventListener("change", () => {
 
 document.getElementById("bg-color-picker").addEventListener("input", render);
 document.getElementById("text-color-picker").addEventListener("input", render);
-
-document.getElementById("track-font-size").addEventListener("input", render);
-document.getElementById("track-cols").addEventListener("input", render);
-document.getElementById("track-font-size").addEventListener("blur", render);
-document.getElementById("track-cols").addEventListener("blur", render);
