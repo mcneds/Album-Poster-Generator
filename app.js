@@ -154,7 +154,9 @@ function render() {
 
   // Tracklist: max 3 columns, wrap if needed
   const columnMax = 3;
-  const columnWidth = (canvas.width - padding * 2) / columnMax;
+  const columnSpacing = 20; // extra spacing between columns
+  const columnWidth = ((canvas.width - padding * 2) - (columnSpacing * (columnMax - 1))) / columnMax;
+
   const lineHeight = 26;
 
   let trackFontSize = 18;
@@ -176,7 +178,7 @@ function render() {
     const col = Math.floor(i / linesPerCol);
     const row = i % linesPerCol;
 
-    const x = padding + col * columnWidth;
+    const x = padding + col * (columnWidth + columnSpacing);
     const trackY = y + row * (trackFontSize + 6);
 
     ctx.fillText(tracks[i].trim(), x, trackY);
