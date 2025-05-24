@@ -7,7 +7,10 @@ document.getElementById("cover-upload").addEventListener("change", function (e) 
   const reader = new FileReader();
   reader.onload = function (event) {
     coverImage = new Image();
-    coverImage.onload = render;
+    coverImage.onload = () => {
+      console.log("Cover image loaded.");
+      render();
+    };
     coverImage.src = event.target.result;
   };
   reader.readAsDataURL(file);
@@ -44,7 +47,8 @@ function render() {
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  if (coverImage) {
+  // ✅ Draw image if loaded
+  if (coverImage && coverImage.complete) {
     const size = 600;
     ctx.drawImage(coverImage, 60, 40, size, size);
   }
