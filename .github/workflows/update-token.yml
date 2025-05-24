@@ -3,7 +3,7 @@ name: Update Spotify Token
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */2 * * *'  # every 2 hours
+    - cron: '*/55 * * * *'  # every 55 minutes
 
 jobs:
   refresh-token:
