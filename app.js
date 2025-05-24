@@ -307,10 +307,16 @@ document.getElementById("spotify-search").addEventListener("input", async (e) =>
     });
 });
 
-document.getElementById("spotify-search").addEventListener("blur", () => {
+const searchInput = document.getElementById("spotify-search");
+const searchResults = document.getElementById("search-results");
+
+searchInput.addEventListener("blur", () => {
+  // Only clear if click wasn't on a result
   setTimeout(() => {
-    document.getElementById("search-results").innerHTML = "";
-  }, 200);
+    if (!searchResults.matches(':hover')) {
+      searchResults.innerHTML = "";
+    }
+  }, 150);
 });
 
 document.getElementById("bg-color-mode").addEventListener("change", () => {
