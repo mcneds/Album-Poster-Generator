@@ -74,81 +74,119 @@ function rgbToHex(r, g, b) {
   ).join("");
 }
 
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-  const words = text.split(' ');
-  let line = '';
-  for (let n = 0; n < words.length; n++) {
-    const testLine = line + words[n] + ' ';
-    const metrics = ctx.measureText(testLine);
-    if (metrics.width > maxWidth && n > 0) {
-      ctx.fillText(line, x, y);
-      line = words[n] + ' ';
-      y += lineHeight;
-    } else {
-      line = testLine;
-    }
-  }
-  ctx.fillText(line, x, y);
-  return y + lineHeight;
-}
-
 function render() {
-  const canvas = document.getElementById('poster');
-  const ctx = canvas.getContext('2d');
-  const album = document.getElementById('album').value;
-  const artist = document.getElementById('artist').value;
-  const year = document.getElementById('year').value;
-  const tracks = document.getElementById('tracks').value.split('\n');
-  const font = document.getElementById('font').value;
+  const canvas = document.getElementById("poster");
+  const ctx = canvas.getContext("2d");
+
+  const album = document.getElementById("album").value;
+  const artist = document.getElementById("artist").value;
+  const year = document.getElementById("year").value;
+  const tracks = document.getElementById("tracks").value.split("\n").filter(t => t.trim());
+  const font = document.getElementById("font").value;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#fff';
+  ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  let textStartY = 60;
+  let y = 60;
+  const centerX = canvas.width / 2;
 
+  // Album art
   if (coverImage && coverImage.complete) {
     const size = 600;
-    ctx.drawImage(coverImage, 60, 40, size, size);
-
-    // Draw color swatches
-    const swatchX = 60;
-    const swatchY = 660;
-    const swatchSize = 40;
-    const spacing = 10;
-
-    colorPalette.forEach((color, i) => {
-      const x = swatchX + i * (swatchSize + spacing);
-      ctx.fillStyle = color;
-      ctx.fillRect(x, swatchY, swatchSize, swatchSize);
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(x, swatchY, swatchSize, swatchSize);
-    });
-
-    textStartY = 730;
+    ctx.drawImage(coverImage, centerX - size / 2, y, size, size);
+    y += size + 20;
   }
 
-  ctx.fillStyle = '#000';
-  ctx.font = `bold 36px ${font}`;
-  ctx.fillText(album, 40, textStartY);
+  // Metadata row layout
+  const padding = 40;
+  const blockWidth = (canvas.width - padding * 2) / 2;
 
-  ctx.font = `24px ${font}`;
-  ctx.fillText(`${artist} (${year})`, 40, textStartY + 40);
+  // Right side: artist + colors
+  const swatchSize = 30;
+  const spacing = 8;
+  const totalSwatchWidth = colorPalette.length * (swatchSize + spacing) - spacing;
+  const rightX = canvas.width - padding;
 
-  ctx.font = `18px ${font}`;
-  let y = textStartY + 90;
-  for (let track of tracks) {
-    if (track.trim()) {
-      y = wrapText(ctx, track.trim(), 40, y, 640, 26);
-    }
+  // Text height control
+  let albumFontSize = 40;
+  const artistFontSize = 20;
+  const blockHeight = Math.max(swatchSize, artistFontSize) + 10;
+
+  // Resize album name if it would collide
+  ctx.font = `bold ${albumFontSize}px ${font}`;
+  while (ctx.measureText(album).width > blockWidth - 20 && albumFontSize > 20) {
+    albumFontSize -= 2;
+    ctx.font = `bold ${albumFontSize}px ${font}`;
+  }
+
+  // Album name and year
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#000";
+  ctx.font = `bold ${albumFontSize}px ${font}`;
+  ctx.fillText(album, padding, y + blockHeight);
+
+  ctx.font = `20px ${font}`;
+  ctx.fillText(year, padding, y + blockHeight + 24);
+
+  // Colors and artist
+  let startX = rightX - totalSwatchWidth;
+  ctx.textAlign = "right";
+
+  colorPalette.forEach((color, i) => {
+    const x = startX + i * (swatchSize + spacing);
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y + blockHeight - swatchSize, swatchSize, swatchSize);
+    ctx.strokeStyle = "#000";
+    ctx.strokeRect(x, y + blockHeight - swatchSize, swatchSize, swatchSize);
+  });
+
+  ctx.font = `bold ${artistFontSize}px ${font}`;
+  ctx.fillStyle = "#000";
+  ctx.fillText(artist, rightX, y + blockHeight + 24);
+
+  y += blockHeight + 60;
+
+  // Divider
+  ctx.fillStyle = "#000";
+  ctx.fillRect(padding, y, canvas.width - 2 * padding, 4);
+  y += 30;
+
+  // Tracklist: max 3 columns, wrap if needed
+  const columnMax = 3;
+  const columnWidth = (canvas.width - padding * 2) / columnMax;
+  const lineHeight = 26;
+
+  let trackFontSize = 18;
+  const trackAreaHeight = canvas.height - y - 30;
+  let linesPerCol = Math.floor(trackAreaHeight / lineHeight);
+  let requiredCols = Math.ceil(tracks.length / linesPerCol);
+
+  while (requiredCols > columnMax && trackFontSize > 10) {
+    trackFontSize -= 1;
+    linesPerCol = Math.floor(trackAreaHeight / (trackFontSize + 6));
+    requiredCols = Math.ceil(tracks.length / linesPerCol);
+  }
+
+  ctx.font = `${trackFontSize}px ${font}`;
+  ctx.fillStyle = "#000";
+  ctx.textAlign = "left";
+
+  for (let i = 0; i < tracks.length; i++) {
+    const col = Math.floor(i / linesPerCol);
+    const row = i % linesPerCol;
+
+    const x = padding + col * columnWidth;
+    const trackY = y + row * (trackFontSize + 6);
+
+    ctx.fillText(tracks[i].trim(), x, trackY);
   }
 }
 
 function exportPoster() {
-  const canvas = document.getElementById('poster');
-  const link = document.createElement('a');
-  link.download = 'poster.png';
+  const canvas = document.getElementById("poster");
+  const link = document.createElement("a");
+  link.download = "poster.png";
   link.href = canvas.toDataURL();
   link.click();
 }
