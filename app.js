@@ -287,7 +287,7 @@ document.getElementById("spotify-search").addEventListener("input", async (e) =>
 
     const data = await res.json();
     const albums = data.albums?.items || [];
-
+    console.log(albums);
     albums.forEach(album => {
         const li = document.createElement("li");
         li.textContent = `${album.name} – ${album.artists[0].name} (${album.release_date.slice(0, 4)})`;
