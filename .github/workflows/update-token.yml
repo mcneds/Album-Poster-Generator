@@ -13,10 +13,8 @@ jobs:
 
       - name: Get Spotify Access Token
         run: |
-            AUTH=$(echo -n "${{ secrets.SPOTIFY_CLIENT_ID }}:${{ secrets.SPOTIFY_CLIENT_SECRET }}" | base64)
-            echo "AUTH=$AUTH"
-            
-            curl -s -X POST "https://accounts.spotify.com/api/token" \
+          AUTH=$(echo -n "${{ secrets.SPOTIFY_CLIENT_ID }}:${{ secrets.SPOTIFY_CLIENT_SECRET }}" | base64)
+          curl -s -X POST "https://accounts.spotify.com/api/token" \
             -H "Authorization: Basic $AUTH" \
             -d grant_type=client_credentials \
             -o token.json
