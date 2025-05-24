@@ -18,13 +18,13 @@ jobs:
             -d grant_type=client_credentials \
             -o token.json
           
-          mkdir -p public/api
-          mv token.json public/api/token.json
+          mkdir -p api
+          mv token.json api/token.json
 
       - name: Commit token
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/api/token.json
+          git add api/token.json
           git commit -m "Update Spotify access token" || echo "No changes"
           git push
