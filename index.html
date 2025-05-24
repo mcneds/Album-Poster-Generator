@@ -25,6 +25,16 @@
     </label>
 
     <textarea id="tracks" placeholder="Enter tracks: title - mm:ss"></textarea>
+    <label>Tracklist Font Size:
+      <input type="number" id="track-font-size" min="10" max="48" value="0" step="2" style="width: 60px;">
+      <span style="font-size: 12px;">(0 = auto)</span>
+    </label>
+
+    <label>Tracklist Columns:
+      <input type="number" id="track-cols" min="1" max="5" value="0" step="1" style="width: 60px;">
+      <span style="font-size: 12px;">(0 = auto)</span>
+    </label>
+
     <label>Background Color:
       <select id="bg-color-mode">
         <option value="auto">Auto</option>
@@ -44,7 +54,7 @@
     <button onclick="render()">Generate</button>
     <button onclick="exportPoster()">Export</button>
 
-    <p id="version" style="font-size: 12px; color: #888;">v0.1.2.0</p>
+    <p id="version" style="font-size: 12px; color: #888;">v0.1.2.1</p>
 
   </div>
   <canvas id="poster" width="720" height="1080"></canvas>
