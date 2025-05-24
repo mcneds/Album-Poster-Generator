@@ -82,6 +82,7 @@ function render() {
   const artist = document.getElementById("artist").value;
   const year = document.getElementById("year").value;
   const tracks = document.getElementById("tracks").value.split("\n").filter(t => t.trim());
+  const showDurations = document.getElementById("toggle-duration").checked;
   const font = document.getElementById("font").value;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -98,29 +99,24 @@ function render() {
     y += size + 20;
   }
 
-  // Metadata row layout
   const padding = 40;
   const blockWidth = (canvas.width - padding * 2) / 2;
 
-  // Right side: artist + colors
   const swatchSize = 30;
   const spacing = 8;
   const totalSwatchWidth = colorPalette.length * (swatchSize + spacing) - spacing;
   const rightX = canvas.width - padding;
 
-  // Text height control
   let albumFontSize = 40;
   const artistFontSize = 20;
   const blockHeight = Math.max(swatchSize, artistFontSize) + 10;
 
-  // Resize album name if it would collide
   ctx.font = `bold ${albumFontSize}px ${font}`;
   while (ctx.measureText(album).width > blockWidth - 20 && albumFontSize > 20) {
     albumFontSize -= 2;
     ctx.font = `bold ${albumFontSize}px ${font}`;
   }
 
-  // Album name and year
   ctx.textAlign = "left";
   ctx.fillStyle = "#000";
   ctx.font = `bold ${albumFontSize}px ${font}`;
@@ -129,7 +125,6 @@ function render() {
   ctx.font = `20px ${font}`;
   ctx.fillText(year, padding, y + blockHeight + 24);
 
-  // Colors and artist
   let startX = rightX - totalSwatchWidth;
   ctx.textAlign = "right";
 
@@ -147,43 +142,54 @@ function render() {
 
   y += blockHeight + 60;
 
-  // Divider
   ctx.fillStyle = "#000";
   ctx.fillRect(padding, y, canvas.width - 2 * padding, 4);
   y += 30;
 
-  // Tracklist: max 3 columns, wrap if needed
-  const columnMax = 3;
-  const columnSpacing = 20; // extra spacing between columns
-  const columnWidth = ((canvas.width - padding * 2) - (columnSpacing * (columnMax - 1))) / columnMax;
-
-  const lineHeight = 26;
-
-  let trackFontSize = 18;
+  // Dynamically determine the best layout
+  const maxColumns = 3;
+  const columnSpacing = 20;
   const trackAreaHeight = canvas.height - y - 30;
-  let linesPerCol = Math.floor(trackAreaHeight / lineHeight);
-  let requiredCols = Math.ceil(tracks.length / linesPerCol);
+  let bestFontSize = 10;
+  let bestCols = maxColumns;
+  let bestLinesPerCol = 1;
 
-  while (requiredCols > columnMax && trackFontSize > 10) {
-    trackFontSize -= 1;
-    linesPerCol = Math.floor(trackAreaHeight / (trackFontSize + 6));
-    requiredCols = Math.ceil(tracks.length / linesPerCol);
+  for (let cols = 1; cols <= maxColumns; cols++) {
+    const colWidth = (canvas.width - padding * 2 - (cols - 1) * columnSpacing) / cols;
+    for (let size = 24; size >= 10; size--) {
+      const lineHeight = size + 6;
+      const linesPerCol = Math.floor(trackAreaHeight / lineHeight);
+      if (linesPerCol * cols >= tracks.length) {
+        bestFontSize = size;
+        bestCols = cols;
+        bestLinesPerCol = linesPerCol;
+        break;
+      }
+    }
+    if (bestFontSize !== 10) break;
   }
 
-  ctx.font = `${trackFontSize}px ${font}`;
+  ctx.font = `${bestFontSize}px ${font}`;
   ctx.fillStyle = "#000";
   ctx.textAlign = "left";
 
   for (let i = 0; i < tracks.length; i++) {
-    const col = Math.floor(i / linesPerCol);
-    const row = i % linesPerCol;
+    const col = Math.floor(i / bestLinesPerCol);
+    const row = i % bestLinesPerCol;
 
-    const x = padding + col * (columnWidth + columnSpacing);
-    const trackY = y + row * (trackFontSize + 6);
+    const colWidth = (canvas.width - padding * 2 - (bestCols - 1) * columnSpacing) / bestCols;
+    const x = padding + col * (colWidth + columnSpacing);
+    const trackY = y + row * (bestFontSize + 6);
 
-    ctx.fillText(tracks[i].trim(), x, trackY);
+    let trackLine = tracks[i].trim();
+    if (!showDurations && trackLine.includes(" - ")) {
+      trackLine = trackLine.split(" - ")[0];
+    }
+
+    ctx.fillText(trackLine, x, trackY);
   }
 }
+
 
 function exportPoster() {
   const canvas = document.getElementById("poster");
