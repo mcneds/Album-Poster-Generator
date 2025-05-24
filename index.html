@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Album Poster Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter&family=Roboto&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="controls">
+    <input id="album" placeholder="Album Name" />
+    <input id="artist" placeholder="Artist" />
+    <input id="year" placeholder="Year" />
+    <select id="font">
+      <option value="'Inter', sans-serif">Inter</option>
+      <option value="'Roboto', sans-serif">Roboto</option>
+      <option value="sans-serif">Sans-serif</option>
+    </select>
+    <textarea id="tracks" placeholder="Enter tracks: title - mm:ss"></textarea>
+    <button onclick="render()">Generate</button>
+    <button onclick="exportPoster()">Export</button>
+  </div>
+  <canvas id="poster" width="720" height="1080"></canvas>
+  <script src="app.js"></script>
+</body>
+</html>

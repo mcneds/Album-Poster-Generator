@@ -1,0 +1,23 @@
+body {
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: row;
+  padding: 20px;
+  gap: 20px;
+}
+
+#controls {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+}
+
+textarea, input, select {
+  margin-bottom: 10px;
+  padding: 8px;
+  font-size: 16px;
+}
+
+canvas {
+  border: 1px solid #ccc;
+}
