@@ -229,6 +229,7 @@ async function selectAlbum(album) {
     const dataTransfer = new DataTransfer();
     dataTransfer.items.add(file);
     fileInput.files = dataTransfer.files;
+    fileInput.dispatchEvent(new Event("change"));
 }
 
 document.getElementById("spotify-search").addEventListener("input", async (e) => {
