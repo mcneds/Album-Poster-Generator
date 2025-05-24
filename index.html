@@ -19,6 +19,11 @@
       <option value="'Roboto', sans-serif">Roboto</option>
       <option value="sans-serif">Sans-serif</option>
     </select>
+    <label style="font-size: 12px; display: block; margin-top: 4px;">
+      <input type="checkbox" id="toggle-duration" checked>
+      Show track durations
+    </label>
+
     <textarea id="tracks" placeholder="Enter tracks: title - mm:ss"></textarea>
     <input type="file" id="cover-upload" accept="image/*" />
     <button onclick="render()">Generate</button>
