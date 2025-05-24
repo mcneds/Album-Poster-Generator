@@ -190,3 +190,75 @@ function exportPoster() {
   link.href = canvas.toDataURL();
   link.click();
 }
+
+async function fetchSpotifyToken() {
+    const res = await fetch("api/token.json");
+    const data = await res.json();
+    return data.access_token;
+}
+
+async function selectAlbum(album) {
+    document.getElementById("album").value = album.name;
+    document.getElementById("artist").value = album.artists[0].name;
+    document.getElementById("year").value = album.release_date.slice(0, 4);
+
+
+    const resultsList = document.getElementById("search-results");
+    resultsList.innerHTML = "";
+
+    // Load tracklist
+    const token = await fetchSpotifyToken();
+    const res = await fetch(`https://api.spotify.com/v1/albums/${album.id}/tracks?limit=50`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    const textarea = document.querySelector("textarea");
+    textarea.value = data.items.map(track =>
+        `${track.name} - ${Math.floor(track.duration_ms / 60000)
+            .toString().padStart(2, "0")}:${Math.floor((track.duration_ms % 60000) / 1000)
+            .toString().padStart(2, "0")}`
+    ).join("\n");
+
+    // Set album image
+    const fileInput = document.querySelector('input[type="file"]');
+    const response = await fetch(album.images[0].url);
+    const blob = await response.blob();
+    const file = new File([blob], "cover.jpg", { type: "image/jpeg" });
+
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+    fileInput.files = dataTransfer.files;
+}
+
+document.getElementById("spotify-search").addEventListener("input", async (e) => {
+    const query = e.target.value.trim();
+    const resultsList = document.getElementById("search-results");
+    resultsList.innerHTML = "";
+
+    if (query.length < 3) return;
+
+    const token = await fetchSpotifyToken();
+
+    const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=album&limit=5`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+
+    const data = await res.json();
+    const albums = data.albums?.items || [];
+
+    albums.forEach(album => {
+        const li = document.createElement("li");
+        li.textContent = `${album.name} – ${album.artists[0].name} (${album.release_date.slice(0, 4)})`;
+        li.addEventListener("click", () => selectAlbum(album));
+        resultsList.appendChild(li);
+    });
+});
+
+document.getElementById("spotify-search").addEventListener("blur", () => {
+  setTimeout(() => {
+    document.getElementById("search-results").innerHTML = "";
+  }, 200);
+});
