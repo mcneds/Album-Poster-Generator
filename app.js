@@ -224,13 +224,17 @@ async function selectAlbum(album) {
     const fileInput = document.querySelector('input[type="file"]');
     const response = await fetch(album.images[0].url);
     const blob = await response.blob();
-    const file = new File([blob], "cover.jpg", { type: "image/jpeg" });
-
-    const dataTransfer = new DataTransfer();
-    dataTransfer.items.add(file);
-    fileInput.files = dataTransfer.files;
-    fileInput.dispatchEvent(new Event("change"));
-}
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      coverImage = new Image();
+      coverImage.onload = () => {
+        extractColors();
+        render();
+      };
+      coverImage.src = event.target.result;
+    };
+    reader.readAsDataURL(blob);
+    }
 
 document.getElementById("spotify-search").addEventListener("input", async (e) => {
     const query = e.target.value.trim();
