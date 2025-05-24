@@ -35,9 +35,10 @@ canvas {
   max-height: 200px;
   overflow-y: auto;
   position: absolute;
+  top: 36px;
   background: white;
   border: 1px solid #ccc;
-  width: calc(100% - 24px); /* fits inside #controls */
+  width: calc(100% - 24px);
   z-index: 3;
 }
 

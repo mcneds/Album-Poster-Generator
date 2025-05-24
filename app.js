@@ -74,6 +74,15 @@ function rgbToHex(r, g, b) {
   ).join("");
 }
 
+function getContrastYIQ(hexcolor) {
+  const r = parseInt(hexcolor.substr(1,2),16);
+  const g = parseInt(hexcolor.substr(3,2),16);
+  const b = parseInt(hexcolor.substr(5,2),16);
+  const yiq = (r*299 + g*587 + b*114)/1000;
+  return yiq >= 128 ? "#000000" : "#FFFFFF";
+}
+
+
 function render() {
   const canvas = document.getElementById("poster");
   const ctx = canvas.getContext("2d");
@@ -86,8 +95,25 @@ function render() {
   const font = document.getElementById("font").value;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#fff";
+
+  let bgColor = "#ffffff";
+  const bgMode = document.getElementById("bg-color-mode").value;
+  if (bgMode === "picker") {
+    bgColor = document.getElementById("bg-color-picker").value;
+  } else if (colorPalette.length > 0) {
+    bgColor = colorPalette[0];
+  }
+  ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  let textColor = "#000000";
+  const textMode = document.getElementById("text-color-mode").value;
+  if (textMode === "picker") {
+    textColor = document.getElementById("text-color-picker").value;
+  } else {
+    textColor = getContrastYIQ(bgColor);
+  }
+
 
   let y = 60;
   const centerX = canvas.width / 2;
@@ -118,7 +144,7 @@ function render() {
   }
 
   ctx.textAlign = "left";
-  ctx.fillStyle = "#000";
+  ctx.fillStyle = textColor;
   ctx.font = `bold ${albumFontSize}px ${font}`;
   ctx.fillText(album, padding, y + blockHeight);
 
@@ -132,17 +158,17 @@ function render() {
     const x = startX + i * (swatchSize + spacing);
     ctx.fillStyle = color;
     ctx.fillRect(x, y + blockHeight - swatchSize, swatchSize, swatchSize);
-    ctx.strokeStyle = "#000";
+    ctx.strokeStyle = textColor;
     ctx.strokeRect(x, y + blockHeight - swatchSize, swatchSize, swatchSize);
   });
 
   ctx.font = `bold ${artistFontSize}px ${font}`;
-  ctx.fillStyle = "#000";
+  ctx.fillStyle = textColor;
   ctx.fillText(artist, rightX, y + blockHeight + 24);
 
   y += blockHeight + 60;
 
-  ctx.fillStyle = "#000";
+  ctx.fillStyle = textColor;
   ctx.fillRect(padding, y, canvas.width - 2 * padding, 4);
   y += 30;
 
@@ -170,7 +196,7 @@ function render() {
   }
 
   ctx.font = `${bestFontSize}px ${font}`;
-  ctx.fillStyle = "#000";
+  ctx.fillStyle = textColor;
   ctx.textAlign = "left";
 
   for (let i = 0; i < tracks.length; i++) {
@@ -275,3 +301,18 @@ document.getElementById("spotify-search").addEventListener("blur", () => {
     document.getElementById("search-results").innerHTML = "";
   }, 200);
 });
+
+document.getElementById("bg-color-mode").addEventListener("change", () => {
+  document.getElementById("bg-color-picker").style.display =
+    document.getElementById("bg-color-mode").value === "picker" ? "inline-block" : "none";
+  render();
+});
+
+document.getElementById("text-color-mode").addEventListener("change", () => {
+  document.getElementById("text-color-picker").style.display =
+    document.getElementById("text-color-mode").value === "picker" ? "inline-block" : "none";
+  render();
+});
+
+document.getElementById("bg-color-picker").addEventListener("input", render);
+document.getElementById("text-color-picker").addEventListener("input", render);

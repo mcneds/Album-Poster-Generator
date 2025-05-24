@@ -25,10 +25,26 @@
     </label>
 
     <textarea id="tracks" placeholder="Enter tracks: title - mm:ss"></textarea>
+    <label>Background Color:
+      <select id="bg-color-mode">
+        <option value="auto">Auto</option>
+        <option value="picker">Pick</option>
+      </select>
+      <input type="color" id="bg-color-picker" value="#ffffff" style="display: none;">
+    </label>
+
+    <label>Text Color:
+      <select id="text-color-mode">
+        <option value="auto">Auto (Black/White)</option>
+        <option value="picker">Pick</option>
+      </select>
+      <input type="color" id="text-color-picker" value="#000000" style="display: none;">
+    </label>
     <input type="file" id="cover-upload" accept="image/*" />
     <button onclick="render()">Generate</button>
     <button onclick="exportPoster()">Export</button>
-    <p id="version" style="font-size: 12px; color: #888;">v0.1.1.5</p>
+
+    <p id="version" style="font-size: 12px; color: #888;">v0.1.2.0</p>
 
   </div>
   <canvas id="poster" width="720" height="1080"></canvas>
