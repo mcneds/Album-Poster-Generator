@@ -327,3 +327,8 @@ document.getElementById("text-color-mode").addEventListener("change", () => {
 
 document.getElementById("bg-color-picker").addEventListener("input", render);
 document.getElementById("text-color-picker").addEventListener("input", render);
+
+document.getElementById("track-font-size").addEventListener("input", render);
+document.getElementById("track-cols").addEventListener("input", render);
+document.getElementById("track-font-size").addEventListener("blur", render);
+document.getElementById("track-cols").addEventListener("blur", render);
