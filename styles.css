@@ -26,7 +26,6 @@ canvas {
 #spotify-search {
   position: relative;
   z-index: 2;
-  width: 100%;
 }
 
 #search-results {
@@ -50,17 +49,4 @@ canvas {
 
 #search-results li:hover {
   background: #eee;
-}
-
-#search-wrapper {
-  position: relative;
-}
-
-
-#search-results {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 3;
 }
