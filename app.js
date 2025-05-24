@@ -17,33 +17,52 @@ document.getElementById("cover-upload").addEventListener("change", function (e) 
   reader.readAsDataURL(file);
 });
 
+function quantize(value, step) {
+  return Math.round(value / step) * step;
+}
+
 function extractColors() {
   const tempCanvas = document.createElement("canvas");
   const tempCtx = tempCanvas.getContext("2d");
   const size = 100;
+  const step = 32;
 
   tempCanvas.width = size;
   tempCanvas.height = size;
   tempCtx.drawImage(coverImage, 0, 0, size, size);
 
   const data = tempCtx.getImageData(0, 0, size, size).data;
-  const colorMap = new Map();
+  const buckets = new Map();
 
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i], g = data[i + 1], b = data[i + 2];
+    if (r > 245 && g > 245 && b > 245) continue;
+    if (r < 15 && g < 15 && b < 15) continue;
 
-    // Filter out near-white/near-black values
-    if (r > 245 && g > 245 && b > 245) continue; // too white
-    if (r < 15 && g < 15 && b < 15) continue;    // too black
+    const qr = quantize(r, step);
+    const qg = quantize(g, step);
+    const qb = quantize(b, step);
+    const key = `${qr},${qg},${qb}`;
 
-    const hex = rgbToHex(r, g, b);
-    colorMap.set(hex, (colorMap.get(hex) || 0) + 1);
+    if (!buckets.has(key)) {
+      buckets.set(key, { count: 0, r: 0, g: 0, b: 0 });
+    }
+
+    const bucket = buckets.get(key);
+    bucket.count += 1;
+    bucket.r += r;
+    bucket.g += g;
+    bucket.b += b;
   }
 
-  const sorted = [...colorMap.entries()].sort((a, b) => b[1] - a[1]);
-  colorPalette = sorted.slice(0, 5).map(entry => entry[0]);
+  const sorted = [...buckets.entries()].sort((a, b) => b[1].count - a[1].count);
+  colorPalette = sorted.slice(0, 5).map(([_, bucket]) => {
+    const avgR = Math.round(bucket.r / bucket.count);
+    const avgG = Math.round(bucket.g / bucket.count);
+    const avgB = Math.round(bucket.b / bucket.count);
+    return rgbToHex(avgR, avgG, avgB);
+  });
 
-  // Fallback in case palette is empty
   if (colorPalette.length === 0) {
     colorPalette = ['#ccc', '#888', '#444', '#000', '#fff'];
   }
@@ -92,7 +111,7 @@ function render() {
     const size = 600;
     ctx.drawImage(coverImage, 60, 40, size, size);
 
-    // ✅ Draw color palette swatches
+    // Draw color swatches
     const swatchX = 60;
     const swatchY = 660;
     const swatchSize = 40;
@@ -102,8 +121,6 @@ function render() {
       const x = swatchX + i * (swatchSize + spacing);
       ctx.fillStyle = color;
       ctx.fillRect(x, swatchY, swatchSize, swatchSize);
-
-      // Add border for visibility
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 1;
       ctx.strokeRect(x, swatchY, swatchSize, swatchSize);
