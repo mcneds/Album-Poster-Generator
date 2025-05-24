@@ -1,3 +1,18 @@
+let coverImage = null;
+
+document.getElementById("cover-upload").addEventListener("change", function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (event) {
+    coverImage = new Image();
+    coverImage.onload = render;
+    coverImage.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   const words = text.split(' ');
   let line = '';
@@ -29,15 +44,22 @@ function render() {
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  if (coverImage) {
+    const size = 600;
+    ctx.drawImage(coverImage, 60, 40, size, size);
+  }
+
+  let textStartY = coverImage ? 680 : 60;
+
   ctx.fillStyle = '#000';
   ctx.font = `bold 36px ${font}`;
-  ctx.fillText(album, 40, 60);
+  ctx.fillText(album, 40, textStartY);
 
   ctx.font = `24px ${font}`;
-  ctx.fillText(`${artist} (${year})`, 40, 100);
+  ctx.fillText(`${artist} (${year})`, 40, textStartY + 40);
 
   ctx.font = `18px ${font}`;
-  let y = 150;
+  let y = textStartY + 90;
   for (let track of tracks) {
     if (track.trim()) {
       y = wrapText(ctx, track.trim(), 40, y, 640, 26);
