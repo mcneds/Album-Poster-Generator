@@ -183,8 +183,11 @@ function render() {
   const columnSpacing = 20;
   const trackAreaHeight = canvas.height - y - 30;
 
-  const userFontSizeRaw = parseInt(document.getElementById("track-font-size").value, 10);
-  const userColsRaw = parseInt(document.getElementById("track-cols").value, 10);
+  const fontSizeInput = document.getElementById("track-font-size").value.trim();
+  const colsInput = document.getElementById("track-cols").value.trim();
+
+  const userFontSizeRaw = fontSizeInput === "" ? 0 : parseInt(fontSizeInput, 10);
+  const userColsRaw = colsInput === "" ? 0 : parseInt(colsInput, 10);
   const manualFontSize = userFontSizeRaw > 0;
   const manualCols = userColsRaw > 0;
 
