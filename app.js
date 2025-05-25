@@ -94,12 +94,6 @@ function render() {
   const showDurations = document.getElementById("toggle-duration").checked;
   const font = document.getElementById("font").value;
 
-  const rawText = document.getElementById("tracks").value;
-  console.log("Raw track input:", rawText);
-
-  const tracksraw = rawText.split("\n").filter(t => t.trim());
-
-
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   let bgColor = "#ffffff";
@@ -184,14 +178,20 @@ const trackAreaHeight = canvas.height - y - 30;
 const userFontSize = parseInt(document.getElementById("track-font-size").value, 10);
 const userCols = parseInt(document.getElementById("track-cols").value, 10);
 
-let fontSize = userFontSize > 0 ? userFontSize : 18;
-let numCols = userCols > 0 ? userCols : 1;
-let linesPerCol = Math.floor(trackAreaHeight / (fontSize + 6));
+let fontSize = 10;
+let numCols = 3;
+let linesPerCol = 1;
 
-if (userFontSize <= 0 || userCols <= 0) {
-  // Auto-calculate optimal font size and column count
-  for (let size = 36; size >= 10; size--) {
-    for (let cols = 1; cols <= 3; cols++) {
+if (userFontSize > 0 && userCols > 0) {
+  fontSize = userFontSize;
+  numCols = userCols;
+  linesPerCol = Math.floor(trackAreaHeight / (fontSize + 6));
+} else {
+  for (let cols = 1; cols <= 3; cols++) {
+    const availableWidth = canvas.width - padding * 2 - (cols - 1) * columnSpacing;
+    const colWidth = availableWidth / cols;
+
+    for (let size = 36; size >= 10; size--) {
       const lineHeight = size + 6;
       const lines = Math.floor(trackAreaHeight / lineHeight);
       if (lines * cols >= tracks.length) {
@@ -201,7 +201,7 @@ if (userFontSize <= 0 || userCols <= 0) {
         break;
       }
     }
-    if (linesPerCol * numCols >= tracks.length) break;
+    if (fontSize > 10) break;
   }
 }
 
@@ -222,12 +222,11 @@ for (let i = 0; i < tracks.length; i++) {
     trackLine = trackLine.split(" - ")[0];
   }
 
-  console.log(`Drawing track ${i}: "${trackLine}" at (${x}, ${trackY})`);
-
   ctx.fillText(trackLine, x, trackY);
-} 
+}
 
 }
+
 
 function exportPoster() {
   const canvas = document.getElementById("poster");
