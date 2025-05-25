@@ -274,6 +274,20 @@ async function selectAlbum(album) {
   reader.readAsDataURL(blob);
 }
 
+function exportPoster() {
+  const canvas = document.getElementById("poster");
+  const album = document.getElementById("album").value.trim().replace(/[^a-z0-9]+/gi, "_");
+  const artist = document.getElementById("artist").value.trim().replace(/[^a-z0-9]+/gi, "_");
+
+  const filename = `${artist || "artist"}_${album || "album"}_poster.png`;
+
+  const link = document.createElement("a");
+  link.download = filename;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
+
+
 document.getElementById("track-font-size").addEventListener("input", () => {
   manualFontSize = true;
   activelyEditingFontSize = true;
