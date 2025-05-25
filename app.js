@@ -1,5 +1,9 @@
 let coverImage = null;
 let colorPalette = [];
+let manualFontSize = false;
+let manualCols = false;
+let activelyEditingFontSize = false;
+let activelyEditingCols = false;
 
 document.getElementById("cover-upload").addEventListener("change", function (e) {
   const file = e.target.files[0];
@@ -20,10 +24,8 @@ document.getElementById("cover-upload").addEventListener("change", function (e) 
 async function fetchSpotifyToken() {
   const res = await fetch("api/token.json");
   const data = await res.json();
-  
   return data.access_token;
 }
-
 
 function quantize(value, step) {
   return Math.round(value / step) * step;
@@ -90,7 +92,6 @@ function getContrastYIQ(hexcolor) {
   return yiq >= 128 ? "#000000" : "#FFFFFF";
 }
 
-
 function render() {
   const canvas = document.getElementById("poster");
   const ctx = canvas.getContext("2d");
@@ -125,7 +126,6 @@ function render() {
   let y = 60;
   const centerX = canvas.width / 2;
 
-  // Album art
   if (coverImage && coverImage.complete) {
     const size = 600;
     ctx.drawImage(coverImage, centerX - size / 2, y, size, size);
@@ -154,7 +154,6 @@ function render() {
   ctx.fillStyle = textColor;
   ctx.font = `bold ${albumFontSize}px ${font}`;
   ctx.fillText(album, padding, y + blockHeight);
-
   ctx.font = `20px ${font}`;
   ctx.fillText(year, padding, y + blockHeight + 24);
 
@@ -174,22 +173,24 @@ function render() {
   ctx.fillText(artist, rightX, y + blockHeight + 24);
 
   y += blockHeight + 60;
-
   ctx.fillStyle = textColor;
   ctx.fillRect(padding, y, canvas.width - 2 * padding, 4);
   y += 30;
 
-  // Tracklist layout
   const columnSpacing = 20;
   const trackAreaHeight = canvas.height - y - 30;
 
-  const fontSizeInput = document.getElementById("track-font-size").value.trim();
-  const colsInput = document.getElementById("track-cols").value.trim();
+  const fontSizeInputEl = document.getElementById("track-font-size");
+  const colsInputEl = document.getElementById("track-cols");
+
+  const fontSizeInput = fontSizeInputEl.value.trim();
+  const colsInput = colsInputEl.value.trim();
 
   const userFontSizeRaw = fontSizeInput === "" ? 0 : parseInt(fontSizeInput, 10);
   const userColsRaw = colsInput === "" ? 0 : parseInt(colsInput, 10);
-  const manualFontSize = userFontSizeRaw > 0;
-  const manualCols = userColsRaw > 0;
+
+  const userWantsFontSize = userFontSizeRaw > 0;
+  const userWantsCols = userColsRaw > 0;
 
   let fontSize = 10;
   let numCols = 3;
@@ -197,14 +198,12 @@ function render() {
   let bestSize = 10;
   let bestCols = 3;
 
-  if (manualFontSize && manualCols) {
+  if (userWantsFontSize && userWantsCols) {
     fontSize = userFontSizeRaw;
     numCols = userColsRaw;
     linesPerCol = Math.floor(trackAreaHeight / (fontSize + 6));
   } else {
     for (let cols = 1; cols <= 3; cols++) {
-      const availableWidth = canvas.width - padding * 2 - (cols - 1) * columnSpacing;
-
       for (let size = 36; size >= 10; size--) {
         const lineHeight = size + 6;
         const lines = Math.floor(trackAreaHeight / lineHeight);
@@ -219,9 +218,8 @@ function render() {
       }
       if (fontSize > 10) break;
     }
-
-    if (!manualFontSize) document.getElementById("track-font-size").value = bestSize;
-    if (!manualCols) document.getElementById("track-cols").value = bestCols;
+    if (!manualFontSize && !activelyEditingFontSize) fontSizeInputEl.value = bestSize;
+    if (!manualCols && !activelyEditingCols) colsInputEl.value = bestCols;
   }
 
   ctx.font = `${fontSize}px ${font}`;
@@ -231,7 +229,6 @@ function render() {
   for (let i = 0; i < tracks.length; i++) {
     const col = Math.floor(i / linesPerCol);
     const row = i % linesPerCol;
-
     const colWidth = (canvas.width - padding * 2 - (numCols - 1) * columnSpacing) / numCols;
     const x = padding + col * (colWidth + columnSpacing);
     const trackY = y + row * (fontSize + 6);
@@ -245,7 +242,6 @@ function render() {
   }
 }
 
-
 async function selectAlbum(album) {
   document.getElementById("album").value = album.name;
   document.getElementById("artist").value = album.artists[0].name;
@@ -254,19 +250,16 @@ async function selectAlbum(album) {
   const resultsList = document.getElementById("search-results");
   resultsList.innerHTML = "";
 
-  // Load tracklist
   const token = await fetchSpotifyToken();
   const res = await fetch(`https://api.spotify.com/v1/albums/${album.id}/tracks?limit=50`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   const data = await res.json();
 
-  const textarea = document.getElementById("tracks");
-  textarea.value = data.items.map(track =>
+  document.getElementById("tracks").value = data.items.map(track =>
     `${track.name} - ${Math.floor(track.duration_ms / 60000).toString().padStart(2, "0")}:${Math.floor((track.duration_ms % 60000) / 1000).toString().padStart(2, "0")}`
   ).join("\n");
 
-  // Load album art
   const response = await fetch(album.images[0].url);
   const blob = await response.blob();
   const reader = new FileReader();
@@ -279,47 +272,48 @@ async function selectAlbum(album) {
     coverImage.src = event.target.result;
   };
   reader.readAsDataURL(blob);
-
-  // Also render to update with tracklist
-  render();
 }
-
-let manualFontSize = false;
-let manualCols = false;
 
 document.getElementById("track-font-size").addEventListener("input", () => {
   manualFontSize = true;
+  activelyEditingFontSize = true;
   render();
 });
 document.getElementById("track-cols").addEventListener("input", () => {
   manualCols = true;
+  activelyEditingCols = true;
+  render();
+});
+document.getElementById("track-font-size").addEventListener("blur", () => {
+  activelyEditingFontSize = false;
+  render();
+});
+document.getElementById("track-cols").addEventListener("blur", () => {
+  activelyEditingCols = false;
   render();
 });
 
 document.getElementById("spotify-search").addEventListener("input", async (e) => {
-    const query = e.target.value.trim();
-    const resultsList = document.getElementById("search-results");
-    resultsList.innerHTML = "";
+  const query = e.target.value.trim();
+  const resultsList = document.getElementById("search-results");
+  resultsList.innerHTML = "";
 
-    if (query.length < 3) return;
+  if (query.length < 3) return;
 
-    const token = await fetchSpotifyToken();
-    console.log("Fetched token:", token);
-    const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=album&limit=5`, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
+  const token = await fetchSpotifyToken();
+  const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=album&limit=5`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
 
-    const data = await res.json();
-    const albums = data.albums?.items || [];
+  const data = await res.json();
+  const albums = data.albums?.items || [];
 
-    albums.forEach(album => {
-        const li = document.createElement("li");
-        li.textContent = `${album.name} – ${album.artists[0].name} (${album.release_date.slice(0, 4)})`;
-        li.addEventListener("click", () => selectAlbum(album));
-        resultsList.appendChild(li);
-    });
+  albums.forEach(album => {
+    const li = document.createElement("li");
+    li.textContent = `${album.name} – ${album.artists[0].name} (${album.release_date.slice(0, 4)})`;
+    li.addEventListener("click", () => selectAlbum(album));
+    resultsList.appendChild(li);
+  });
 });
 
 document.getElementById("spotify-search").addEventListener("blur", () => {
@@ -342,8 +336,3 @@ document.getElementById("text-color-mode").addEventListener("change", () => {
 
 document.getElementById("bg-color-picker").addEventListener("input", render);
 document.getElementById("text-color-picker").addEventListener("input", render);
-
-document.getElementById("track-font-size").addEventListener("input", render);
-document.getElementById("track-cols").addEventListener("input", render);
-document.getElementById("track-font-size").addEventListener("blur", render);
-document.getElementById("track-cols").addEventListener("blur", render);
