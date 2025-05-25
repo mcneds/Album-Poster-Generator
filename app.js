@@ -243,6 +243,44 @@ function render() {
 }
 
 
+async function selectAlbum(album) {
+  document.getElementById("album").value = album.name;
+  document.getElementById("artist").value = album.artists[0].name;
+  document.getElementById("year").value = album.release_date.slice(0, 4);
+
+  const resultsList = document.getElementById("search-results");
+  resultsList.innerHTML = "";
+
+  // Load tracklist
+  const token = await fetchSpotifyToken();
+  const res = await fetch(`https://api.spotify.com/v1/albums/${album.id}/tracks?limit=50`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const data = await res.json();
+
+  const textarea = document.getElementById("tracks");
+  textarea.value = data.items.map(track =>
+    `${track.name} - ${Math.floor(track.duration_ms / 60000).toString().padStart(2, "0")}:${Math.floor((track.duration_ms % 60000) / 1000).toString().padStart(2, "0")}`
+  ).join("\n");
+
+  // Load album art
+  const response = await fetch(album.images[0].url);
+  const blob = await response.blob();
+  const reader = new FileReader();
+  reader.onload = function (event) {
+    coverImage = new Image();
+    coverImage.onload = () => {
+      extractColors();
+      render();
+    };
+    coverImage.src = event.target.result;
+  };
+  reader.readAsDataURL(blob);
+
+  // Also render to update with tracklist
+  render();
+}
+
 let manualFontSize = false;
 let manualCols = false;
 
