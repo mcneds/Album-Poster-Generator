@@ -20,7 +20,7 @@ document.getElementById("cover-upload").addEventListener("change", function (e) 
 async function fetchSpotifyToken() {
   const res = await fetch("api/token.json");
   const data = await res.json();
-  console.log("Fetched token:", token);
+  
   return data.access_token;
 }
 
@@ -263,7 +263,7 @@ document.getElementById("spotify-search").addEventListener("input", async (e) =>
     if (query.length < 3) return;
 
     const token = await fetchSpotifyToken();
-
+    console.log("Fetched token:", token);
     const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=album&limit=5`, {
         headers: {
             Authorization: `Bearer ${token}`
