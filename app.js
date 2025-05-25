@@ -114,7 +114,6 @@ function render() {
     textColor = getContrastYIQ(bgColor);
   }
 
-
   let y = 60;
   const centerX = canvas.width / 2;
 
@@ -172,114 +171,81 @@ function render() {
   ctx.fillRect(padding, y, canvas.width - 2 * padding, 4);
   y += 30;
 
-  // Dynamically determine the best layout
-const columnSpacing = 20;
-const trackAreaHeight = canvas.height - y - 30;
-const userFontSize = parseInt(document.getElementById("track-font-size").value, 10);
-const userCols = parseInt(document.getElementById("track-cols").value, 10);
+  // Tracklist layout
+  const columnSpacing = 20;
+  const trackAreaHeight = canvas.height - y - 30;
 
-let fontSize = 10;
-let numCols = 3;
-let linesPerCol = 1;
+  const userFontSizeRaw = parseInt(document.getElementById("track-font-size").value, 10);
+  const userColsRaw = parseInt(document.getElementById("track-cols").value, 10);
+  const manualFontSize = userFontSizeRaw > 0;
+  const manualCols = userColsRaw > 0;
 
-if (userFontSize > 0 && userCols > 0) {
-  fontSize = userFontSize;
-  numCols = userCols;
-  linesPerCol = Math.floor(trackAreaHeight / (fontSize + 6));
-} else {
-  for (let cols = 1; cols <= 3; cols++) {
-    const availableWidth = canvas.width - padding * 2 - (cols - 1) * columnSpacing;
-    const colWidth = availableWidth / cols;
+  let fontSize = 10;
+  let numCols = 3;
+  let linesPerCol = 1;
+  let bestSize = 10;
+  let bestCols = 3;
 
-    for (let size = 36; size >= 10; size--) {
-      const lineHeight = size + 6;
-      const lines = Math.floor(trackAreaHeight / lineHeight);
-      if (lines * cols >= tracks.length) {
-        fontSize = size;
-        numCols = cols;
-        linesPerCol = lines;
-        break;
+  if (manualFontSize && manualCols) {
+    fontSize = userFontSizeRaw;
+    numCols = userColsRaw;
+    linesPerCol = Math.floor(trackAreaHeight / (fontSize + 6));
+  } else {
+    for (let cols = 1; cols <= 3; cols++) {
+      const availableWidth = canvas.width - padding * 2 - (cols - 1) * columnSpacing;
+
+      for (let size = 36; size >= 10; size--) {
+        const lineHeight = size + 6;
+        const lines = Math.floor(trackAreaHeight / lineHeight);
+        if (lines * cols >= tracks.length) {
+          fontSize = size;
+          numCols = cols;
+          linesPerCol = lines;
+          bestSize = size;
+          bestCols = cols;
+          break;
+        }
       }
+      if (fontSize > 10) break;
     }
-    if (fontSize > 10) break;
+
+    if (!manualFontSize) document.getElementById("track-font-size").value = bestSize;
+    if (!manualCols) document.getElementById("track-cols").value = bestCols;
+  }
+
+  ctx.font = `${fontSize}px ${font}`;
+  ctx.fillStyle = textColor;
+  ctx.textAlign = "left";
+
+  for (let i = 0; i < tracks.length; i++) {
+    const col = Math.floor(i / linesPerCol);
+    const row = i % linesPerCol;
+
+    const colWidth = (canvas.width - padding * 2 - (numCols - 1) * columnSpacing) / numCols;
+    const x = padding + col * (colWidth + columnSpacing);
+    const trackY = y + row * (fontSize + 6);
+
+    let trackLine = tracks[i].trim();
+    if (!showDurations && trackLine.includes(" - ")) {
+      trackLine = trackLine.split(" - ")[0];
+    }
+
+    ctx.fillText(trackLine, x, trackY);
   }
 }
 
-ctx.font = `${fontSize}px ${font}`;
-ctx.fillStyle = textColor;
-ctx.textAlign = "left";
 
-for (let i = 0; i < tracks.length; i++) {
-  const col = Math.floor(i / linesPerCol);
-  const row = i % linesPerCol;
+let manualFontSize = false;
+let manualCols = false;
 
-  const colWidth = (canvas.width - padding * 2 - (numCols - 1) * columnSpacing) / numCols;
-  const x = padding + col * (colWidth + columnSpacing);
-  const trackY = y + row * (fontSize + 6);
-
-  let trackLine = tracks[i].trim();
-  if (!showDurations && trackLine.includes(" - ")) {
-    trackLine = trackLine.split(" - ")[0];
-  }
-
-  ctx.fillText(trackLine, x, trackY);
-}
-
-}
-
-
-function exportPoster() {
-  const canvas = document.getElementById("poster");
-  const link = document.createElement("a");
-  link.download = "poster.png";
-  link.href = canvas.toDataURL();
-  link.click();
-}
-
-async function fetchSpotifyToken() {
-    const res = await fetch("api/token.json");
-    const data = await res.json();
-    return data.access_token;
-}
-
-async function selectAlbum(album) {
-    document.getElementById("album").value = album.name;
-    document.getElementById("artist").value = album.artists[0].name;
-    document.getElementById("year").value = album.release_date.slice(0, 4);
-
-
-    const resultsList = document.getElementById("search-results");
-    resultsList.innerHTML = "";
-
-    // Load tracklist
-    const token = await fetchSpotifyToken();
-    const res = await fetch(`https://api.spotify.com/v1/albums/${album.id}/tracks?limit=50`, {
-        headers: { Authorization: `Bearer ${token}` }
-    });
-    const data = await res.json();
-
-    const textarea = document.querySelector("textarea");
-    textarea.value = data.items.map(track =>
-        `${track.name} - ${Math.floor(track.duration_ms / 60000)
-            .toString().padStart(2, "0")}:${Math.floor((track.duration_ms % 60000) / 1000)
-            .toString().padStart(2, "0")}`
-    ).join("\n");
-
-    // Set album image
-    const fileInput = document.querySelector('input[type="file"]');
-    const response = await fetch(album.images[0].url);
-    const blob = await response.blob();
-    const reader = new FileReader();
-    reader.onload = function (event) {
-      coverImage = new Image();
-      coverImage.onload = () => {
-        extractColors();
-        render();
-      };
-      coverImage.src = event.target.result;
-    };
-    reader.readAsDataURL(blob);
-    }
+document.getElementById("track-font-size").addEventListener("input", () => {
+  manualFontSize = true;
+  render();
+});
+document.getElementById("track-cols").addEventListener("input", () => {
+  manualCols = true;
+  render();
+});
 
 document.getElementById("spotify-search").addEventListener("input", async (e) => {
     const query = e.target.value.trim();
