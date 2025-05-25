@@ -94,6 +94,12 @@ function render() {
   const showDurations = document.getElementById("toggle-duration").checked;
   const font = document.getElementById("font").value;
 
+  const rawText = document.getElementById("tracks").value;
+  console.log("Raw track input:", rawText);
+
+  const tracksraw = rawText.split("\n").filter(t => t.trim());
+
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   let bgColor = "#ffffff";
@@ -216,11 +222,12 @@ for (let i = 0; i < tracks.length; i++) {
     trackLine = trackLine.split(" - ")[0];
   }
 
+  console.log(`Drawing track ${i}: "${trackLine}" at (${x}, ${trackY})`);
+
   ctx.fillText(trackLine, x, trackY);
-}
+} 
 
 }
-
 
 function exportPoster() {
   const canvas = document.getElementById("poster");
