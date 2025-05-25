@@ -17,6 +17,14 @@ document.getElementById("cover-upload").addEventListener("change", function (e) 
   reader.readAsDataURL(file);
 });
 
+async function fetchSpotifyToken() {
+  const res = await fetch("api/token.json");
+  const data = await res.json();
+  console.log("Fetched token:", token);
+  return data.access_token;
+}
+
+
 function quantize(value, step) {
   return Math.round(value / step) * step;
 }
