@@ -275,17 +275,41 @@ async function selectAlbum(album) {
 }
 
 function exportPoster() {
-  const canvas = document.getElementById("poster");
   const album = document.getElementById("album").value.trim().replace(/[^a-z0-9]+/gi, "_");
   const artist = document.getElementById("artist").value.trim().replace(/[^a-z0-9]+/gi, "_");
-
   const filename = `${artist || "artist"}_${album || "album"}_poster.png`;
 
+  // Get desired export resolution
+  let width, height;
+  const res = document.getElementById("export-res").value;
+  if (res === "custom") {
+    width = parseInt(document.getElementById("custom-width").value, 10) || 720;
+    height = parseInt(document.getElementById("custom-height").value, 10) || 1080;
+  } else {
+    [width, height] = res.split("x").map(Number);
+  }
+
+  // Create a temporary canvas at target resolution
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = width;
+  tempCanvas.height = height;
+  const ctx = tempCanvas.getContext("2d");
+
+  // Scale render to temp canvas
+  const originalCanvas = document.getElementById("poster");
+  const scaleX = width / originalCanvas.width;
+  const scaleY = height / originalCanvas.height;
+
+  ctx.scale(scaleX, scaleY);
+  ctx.drawImage(originalCanvas, 0, 0);
+
+  // Export
   const link = document.createElement("a");
   link.download = filename;
-  link.href = canvas.toDataURL("image/png");
+  link.href = tempCanvas.toDataURL("image/png");
   link.click();
 }
+
 
 
 document.getElementById("track-font-size").addEventListener("input", () => {
@@ -350,3 +374,8 @@ document.getElementById("text-color-mode").addEventListener("change", () => {
 
 document.getElementById("bg-color-picker").addEventListener("input", render);
 document.getElementById("text-color-picker").addEventListener("input", render);
+
+document.getElementById("export-res").addEventListener("change", () => {
+  const customWrapper = document.getElementById("custom-res-wrapper");
+  customWrapper.style.display = document.getElementById("export-res").value === "custom" ? "block" : "none";
+});
