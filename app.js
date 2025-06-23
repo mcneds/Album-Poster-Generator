@@ -280,13 +280,21 @@ function exportPoster() {
   const filename = `${artist || "artist"}_${album || "album"}_poster.png`;
 
   // Get desired export resolution
-  let width, height;
+      let width, height;
   const res = document.getElementById("export-res").value;
-  if (res === "custom") {
-    width = parseInt(document.getElementById("custom-width").value, 10) || 720;
-    height = parseInt(document.getElementById("custom-height").value, 10) || 1080;
-  } else {
-    [width, height] = res.split("x").map(Number);
+  switch (res) {
+    case "a5":
+      width = 1748; height = 2480; break;
+    case "a4":
+      width = 2480; height = 3508; break;
+    case "a3":
+      width = 3508; height = 4961; break;
+    case "custom":
+      width = parseInt(document.getElementById("custom-width").value, 10) || 720;
+      height = parseInt(document.getElementById("custom-height").value, 10) || 1080;
+      break;
+    default:
+      [width, height] = res.split("x").map(Number);
   }
 
   // Create a temporary canvas at target resolution
