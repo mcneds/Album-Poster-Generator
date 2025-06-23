@@ -51,13 +51,16 @@
     <input type="file" id="cover-upload" accept="image/*" />
     <button onclick="render()">Generate</button>
     <label>Export Resolution:
-      <select id="export-res">
-        <option value="720x1080">720 x 1080</option>
-        <option value="1080x1620" selected>1080 x 1620</option>
-        <option value="1440x2160">1440 x 2160</option>
-        <option value="custom">Custom</option>
-      </select>
-    </label>
+  <select id="export-res">
+    <option value="720x1080">720 x 1080</option>
+    <option value="1080x1620" selected>1080 x 1620</option>
+    <option value="1440x2160">1440 x 2160</option>
+    <option value="a4">A4 (2480 × 3508 @ 300 DPI)</option>
+    <option value="a3">A3 (3508 × 4961 @ 300 DPI)</option>
+    <option value="a5">A5 (1748 × 2480 @ 300 DPI)</option>
+    <option value="custom">Custom</option>
+  </select>
+</label>
     <div id="custom-res-wrapper" style="display: none;">
       <input type="number" id="custom-width" placeholder="Width (px)" style="width: 120px;">
       <input type="number" id="custom-height" placeholder="Height (px)" style="width: 120px;">
