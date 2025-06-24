@@ -241,7 +241,6 @@ function render() {
     ctx.fillText(trackLine, x, trackY);
   }
 }
-
 async function selectAlbum(album) {
   document.getElementById("album").value = album.name;
   document.getElementById("artist").value = album.artists[0].name;
@@ -260,19 +259,18 @@ async function selectAlbum(album) {
     `${track.name} - ${Math.floor(track.duration_ms / 60000).toString().padStart(2, "0")}:${Math.floor((track.duration_ms % 60000) / 1000).toString().padStart(2, "0")}`
   ).join("\n");
 
-  const response = await fetch(album.images[0].url);
-  const blob = await response.blob();
-  const reader = new FileReader();
-  reader.onload = function (event) {
-    coverImage = new Image();
-    coverImage.onload = () => {
-      extractColors();
-      render();
-    };
-    coverImage.src = event.target.result;
+  coverImage = new Image();
+  coverImage.crossOrigin = "anonymous"; // Allows drawing to canvas
+  coverImage.onload = () => {
+    extractColors();
+    render();
   };
-  reader.readAsDataURL(blob);
+  coverImage.onerror = (e) => {
+    console.error("Image failed to load", e);
+  };
+  coverImage.src = album.images[0].url;
 }
+
 
 function exportPoster() {
   const album = document.getElementById("album").value.trim().replace(/[^a-z0-9]+/gi, "_");
