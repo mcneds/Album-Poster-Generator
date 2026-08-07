@@ -4,6 +4,7 @@ let manualFontSize = false;
 let manualCols = false;
 let activelyEditingFontSize = false;
 let activelyEditingCols = false;
+let spotifyToken = null;
 
 document.getElementById("cover-upload").addEventListener("change", function (e) {
   const file = e.target.files[0];
@@ -21,10 +22,58 @@ document.getElementById("cover-upload").addEventListener("change", function (e) 
   reader.readAsDataURL(file);
 });
 
-async function fetchSpotifyToken() {
-  const res = await fetch("api/token.json");
+async function fetchSpotifyToken(forceRefresh = false) {
+  if (spotifyToken && !forceRefresh) return spotifyToken;
+
+  const res = await fetch(`api/token.json?t=${Date.now()}`, { cache: "no-store" });
+  if (!res.ok) {
+    throw new Error(`Could not load Spotify token (${res.status})`);
+  }
+
   const data = await res.json();
-  return data.access_token;
+  if (!data.access_token) {
+    throw new Error("Spotify token response did not include an access token");
+  }
+
+  spotifyToken = data.access_token;
+  return spotifyToken;
+}
+
+async function fetchSpotifyApi(url) {
+  let token = await fetchSpotifyToken();
+  let res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  if (res.status === 401) {
+    spotifyToken = null;
+    token = await fetchSpotifyToken(true);
+    res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  }
+
+  if (!res.ok) {
+    let message = `Spotify request failed (${res.status})`;
+    try {
+      const data = await res.json();
+      message = data.error?.message || message;
+    } catch {
+      // Keep the status-based message if Spotify does not return JSON.
+    }
+    throw new Error(message);
+  }
+
+  return res;
+}
+
+function showSearchMessage(message) {
+  const resultsList = document.getElementById("search-results");
+  resultsList.innerHTML = "";
+
+  const li = document.createElement("li");
+  li.textContent = message;
+  resultsList.appendChild(li);
 }
 
 function quantize(value, step) {
@@ -249,26 +298,28 @@ async function selectAlbum(album) {
   const resultsList = document.getElementById("search-results");
   resultsList.innerHTML = "";
 
-  const token = await fetchSpotifyToken();
-  const res = await fetch(`https://api.spotify.com/v1/albums/${album.id}/tracks?limit=50`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  const data = await res.json();
+  try {
+    const res = await fetchSpotifyApi(`https://api.spotify.com/v1/albums/${album.id}/tracks?limit=50`);
+    const data = await res.json();
 
-  document.getElementById("tracks").value = data.items.map(track =>
-    `${track.name} - ${Math.floor(track.duration_ms / 60000).toString().padStart(2, "0")}:${Math.floor((track.duration_ms % 60000) / 1000).toString().padStart(2, "0")}`
-  ).join("\n");
+    document.getElementById("tracks").value = data.items.map(track =>
+      `${track.name} - ${Math.floor(track.duration_ms / 60000).toString().padStart(2, "0")}:${Math.floor((track.duration_ms % 60000) / 1000).toString().padStart(2, "0")}`
+    ).join("\n");
 
-  coverImage = new Image();
-  coverImage.crossOrigin = "anonymous"; // Allows drawing to canvas
-  coverImage.onload = () => {
-    extractColors();
-    render();
-  };
-  coverImage.onerror = (e) => {
-    console.error("Image failed to load", e);
-  };
-  coverImage.src = album.images[0].url;
+    coverImage = new Image();
+    coverImage.crossOrigin = "anonymous"; // Allows drawing to canvas
+    coverImage.onload = () => {
+      extractColors();
+      render();
+    };
+    coverImage.onerror = (e) => {
+      console.error("Image failed to load", e);
+    };
+    coverImage.src = album.images[0].url;
+  } catch (error) {
+    console.error(error);
+    showSearchMessage(error.message);
+  }
 }
 
 
@@ -344,20 +395,26 @@ document.getElementById("spotify-search").addEventListener("input", async (e) =>
 
   if (query.length < 3) return;
 
-  const token = await fetchSpotifyToken();
-  const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=album&limit=5`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  try {
+    const res = await fetchSpotifyApi(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=album&limit=5`);
 
-  const data = await res.json();
-  const albums = data.albums?.items || [];
+    const data = await res.json();
+    const albums = data.albums?.items || [];
 
-  albums.forEach(album => {
-    const li = document.createElement("li");
-    li.textContent = `${album.name} – ${album.artists[0].name} (${album.release_date.slice(0, 4)})`;
-    li.addEventListener("click", () => selectAlbum(album));
-    resultsList.appendChild(li);
-  });
+    if (e.target.value.trim() !== query) return;
+
+    albums.forEach(album => {
+      const li = document.createElement("li");
+      li.textContent = `${album.name} - ${album.artists[0].name} (${album.release_date.slice(0, 4)})`;
+      li.addEventListener("click", () => selectAlbum(album));
+      resultsList.appendChild(li);
+    });
+  } catch (error) {
+    console.error(error);
+    if (e.target.value.trim() === query) {
+      showSearchMessage(error.message);
+    }
+  }
 });
 
 document.getElementById("spotify-search").addEventListener("blur", () => {
